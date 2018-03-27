@@ -1,0 +1,9 @@
+---
+image: golang:1.10-stretch
+
+shell: /bin/bash
+
+mount: /go/src/github.com/UltimateSoftware/envctl
+
+variables:
+- FOO=bar
