@@ -1,11 +1,16 @@
 package docker
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	gosignal "os/signal"
+
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/docker/docker/pkg/signal"
+	"github.com/docker/docker/pkg/term"
 )
 
 // ImageConfig contains all the information needed to interact with the images.
@@ -54,9 +59,14 @@ func (b Mount) String() string {
 type Client struct {
 	*client.Client
 
-	stdin  *os.File
-	stdout *os.File
-	stderr *os.File
+	stdin  termStream
+	stdout termStream
+	stderr termStream
+}
+
+type termStream struct {
+	stream *os.File
+	fd     uintptr
 }
 
 // NewClient returns a `*Client` with stdin, stdout and stderr initialized.
@@ -66,11 +76,15 @@ func NewClient() (*Client, error) {
 		return nil, err
 	}
 
+	stdinfd, _ := term.GetFdInfo(os.Stdin)
+	stdoutfd, _ := term.GetFdInfo(os.Stdout)
+	stderrfd, _ := term.GetFdInfo(os.Stderr)
+
 	return &Client{
 		Client: cli,
-		stdin:  os.Stdin,
-		stdout: os.Stdout,
-		stderr: os.Stderr,
+		stdin:  termStream{stream: os.Stdin, fd: stdinfd},
+		stdout: termStream{stream: os.Stdout, fd: stdoutfd},
+		stderr: termStream{stream: os.Stderr, fd: stderrfd},
 	}, nil
 }
 
@@ -86,24 +100,63 @@ func (c *Client) MakeRawTerminal() (func() error, func() error, error) {
 	// This stuff is required to make interactive sessions in the container
 	// less buggy. For example, without it, any command typed at the prompt will
 	// get repeated out before printing the execution results.
-	oldStdout, err := terminal.MakeRaw(int(c.stdout.Fd()))
+	oldStdout, err := term.MakeRaw(c.stdout.fd)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	restoreStdout := func() error {
-		return terminal.Restore(int(c.stdout.Fd()), oldStdout)
+		return term.RestoreTerminal(c.stdout.fd, oldStdout)
 	}
 
-	oldStdin, err := terminal.MakeRaw(int(c.stdin.Fd()))
+	oldStdin, err := term.MakeRaw(c.stdin.fd)
 	if err != nil {
-		terminal.Restore(int(c.stdout.Fd()), oldStdout)
+		term.RestoreTerminal(c.stdout.fd, oldStdout)
 		return nil, nil, err
 	}
 
 	restoreStdin := func() error {
-		return terminal.Restore(int(c.stdin.Fd()), oldStdin)
+		return term.RestoreTerminal(c.stdin.fd, oldStdin)
 	}
 
 	return restoreStdout, restoreStdin, nil
+}
+
+func (ts *termStream) getTTYSize() (uint, uint) {
+	ws, err := term.GetWinsize(ts.fd)
+	if err != nil {
+		if ws == nil {
+			return 0, 0
+		}
+	}
+	return uint(ws.Width), uint(ws.Height)
+}
+
+func (c *Client) mirrorContainerTTY(cntid string) error {
+	handleTerminalResize := func() {
+		width, height := c.stdout.getTTYSize()
+		if width == 0 && height == 0 {
+			return
+		}
+
+		options := types.ResizeOptions{
+			Width:  width,
+			Height: height,
+		}
+
+		c.ContainerResize(context.Background(), cntid, options)
+	}
+
+	// Run this the first time to establish the link between the container's TTY
+	// and the terminal emulator's TTY.
+	handleTerminalResize()
+
+	sigchan := make(chan os.Signal, 1)
+	gosignal.Notify(sigchan, signal.SIGWINCH)
+	go func() {
+		for range sigchan {
+			handleTerminalResize()
+		}
+	}()
+	return nil
 }

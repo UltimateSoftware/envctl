@@ -93,8 +93,10 @@ func (c *Client) AttachContainer(id string) error {
 		return err
 	}
 
+	c.mirrorContainerTTY(id)
+
 	go func() {
-		_, err := io.Copy(c.stdout, resp.Reader)
+		_, err := io.Copy(c.stdout.stream, resp.Reader)
 		if err != nil {
 			errchan <- err
 			restoreStdout()
@@ -106,7 +108,7 @@ func (c *Client) AttachContainer(id string) error {
 	}()
 
 	go func() {
-		_, err := io.Copy(resp.Conn, c.stdin)
+		_, err := io.Copy(resp.Conn, c.stdin.stream)
 		if err != nil {
 			errchan <- err
 			restoreStdin()
@@ -122,7 +124,7 @@ func (c *Client) AttachContainer(id string) error {
 	// that the process is hung, when in fact there just hasn't been anything
 	// to write to stdout.
 	fmt.Fprintf(
-		c.stdout,
+		c.stdout.stream,
 		"If you don't see a command prompt, try pressing enter.\r\n",
 	)
 
