@@ -1,10 +1,15 @@
 package docker
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	gosignal "os/signal"
+
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/term"
 )
 
@@ -115,4 +120,54 @@ func (c *Client) MakeRawTerminal() (func() error, func() error, error) {
 	}
 
 	return restoreStdout, restoreStdin, nil
+}
+
+func (c *Client) ResizeTTY(cntid string) {
+	width, height := c.stdout.getTTYSize()
+
+	c.resizeTtyTo(cntid, width, height)
+
+	c.MonitorTtySize(cntid)
+}
+
+func (ts *termStream) getTTYSize() (uint, uint) {
+	ws, err := term.GetWinsize(ts.fd)
+	if err != nil {
+		if ws == nil {
+			return 0, 0
+		}
+	}
+	return uint(ws.Width), uint(ws.Height)
+}
+
+// resizeTtyTo resizes tty to specific height and width
+func (c *Client) resizeTtyTo(cntid string, width, height uint) {
+	if width == 0 && height == 0 {
+		return
+	}
+
+	options := types.ResizeOptions{
+		Width:  width,
+		Height: height,
+	}
+
+	c.ContainerResize(context.Background(), cntid, options)
+}
+
+func (c *Client) MonitorTtySize(cntid string) error {
+	resizeTty := func() {
+		width, height := c.stdout.getTTYSize()
+		c.resizeTtyTo(cntid, width, height)
+	}
+
+	resizeTty()
+
+	sigchan := make(chan os.Signal, 1)
+	gosignal.Notify(sigchan, signal.SIGWINCH)
+	go func() {
+		for range sigchan {
+			resizeTty()
+		}
+	}()
+	return nil
 }
