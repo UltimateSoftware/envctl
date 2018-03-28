@@ -12,27 +12,12 @@ environment with all the stuff they need to work on it.
 
 **NOTE:** This assumes you have [Docker](https://www.docker.com/) installed.
 
-1. Install `envctl`.
 ```
 $ go install github.com/UltimateSoftware/envctl
-```
-2. Change directory to your repo.
-```
 $ cd $HOME/src/my-repo
-```
-3. Generate a configuration file
-```
 $ envctl init
-```
-4. After editing the configuration file, create your environment.
-```
 $ envctl create
-```
-5. Log in and poke around
-```
-$ envctl login
-```
-6. Destroy it when you don't need it anymore.
-```
+$ $EDITOR envctl.yaml
+$ envctl login # do stuff, then exit
 $ envctl destroy
 ```
