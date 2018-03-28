@@ -1,5 +1,9 @@
 # envctl
 
+[![Build Status](https://travis-ci.org/UltimateSoftware/envctl.svg?branch=master)](https://travis-ci.org/UltimateSoftware/envctl)
+
+-----
+
 Every codebase has a set of tools developers need to work with it. Managing that
 set of tools is usually tricky for a bunch of reasons.
 
