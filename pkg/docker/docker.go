@@ -122,14 +122,6 @@ func (c *Client) MakeRawTerminal() (func() error, func() error, error) {
 	return restoreStdout, restoreStdin, nil
 }
 
-func (c *Client) ResizeTTY(cntid string) {
-	width, height := c.stdout.getTTYSize()
-
-	c.resizeTtyTo(cntid, width, height)
-
-	c.MonitorTtySize(cntid)
-}
-
 func (ts *termStream) getTTYSize() (uint, uint) {
 	ws, err := term.GetWinsize(ts.fd)
 	if err != nil {
@@ -140,33 +132,30 @@ func (ts *termStream) getTTYSize() (uint, uint) {
 	return uint(ws.Width), uint(ws.Height)
 }
 
-// resizeTtyTo resizes tty to specific height and width
-func (c *Client) resizeTtyTo(cntid string, width, height uint) {
-	if width == 0 && height == 0 {
-		return
-	}
-
-	options := types.ResizeOptions{
-		Width:  width,
-		Height: height,
-	}
-
-	c.ContainerResize(context.Background(), cntid, options)
-}
-
-func (c *Client) MonitorTtySize(cntid string) error {
-	resizeTty := func() {
+func (c *Client) mirrorContainerTTY(cntid string) error {
+	handleTerminalResize := func() {
 		width, height := c.stdout.getTTYSize()
-		c.resizeTtyTo(cntid, width, height)
+		if width == 0 && height == 0 {
+			return
+		}
+
+		options := types.ResizeOptions{
+			Width:  width,
+			Height: height,
+		}
+
+		c.ContainerResize(context.Background(), cntid, options)
 	}
 
-	resizeTty()
+	// Run this the first time to establish the link between the container's TTY
+	// and the terminal emulator's TTY.
+	handleTerminalResize()
 
 	sigchan := make(chan os.Signal, 1)
 	gosignal.Notify(sigchan, signal.SIGWINCH)
 	go func() {
 		for range sigchan {
-			resizeTty()
+			handleTerminalResize()
 		}
 	}()
 	return nil

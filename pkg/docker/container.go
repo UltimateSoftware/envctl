@@ -93,7 +93,7 @@ func (c *Client) AttachContainer(id string) error {
 		return err
 	}
 
-	c.ResizeTTY(id)
+	c.mirrorContainerTTY(id)
 
 	go func() {
 		_, err := io.Copy(c.stdout.stream, resp.Reader)
