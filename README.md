@@ -5,7 +5,8 @@
 -----
 
 Every codebase has a set of tools developers need to work with it. Managing that
-set of tools is usually tricky for a bunch of reasons.
+set of tools is usually tricky for a bunch of reasons. Getting new devs set up with a
+codebase can often get complicated.
 
 But it really doesn't have to be complicated.
 
