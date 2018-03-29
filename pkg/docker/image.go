@@ -15,13 +15,9 @@ import (
 )
 
 var dockerfileTpl = `FROM {{ .BaseImage }}
-
-VOLUME ["{{ .Mount }}"]
-
-WORKDIR "{{ .Mount }}"
-
-ENTRYPOINT ["{{ .Shell }}"]
-`
+	VOLUME ["{{ .Mount }}"]
+	WORKDIR "{{ .Mount }}"
+	ENTRYPOINT ["{{ .Shell }}"]`
 
 // BuildImage will build an image based on the passed in ImageConfig. It returns
 // the name of the built image, as <cfg.BaseName:UUID>, or an error.
