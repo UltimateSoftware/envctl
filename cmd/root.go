@@ -55,6 +55,7 @@ func init() {
 
 	rootCmd.AddCommand(newCreateCmd(ctl, s))
 	rootCmd.AddCommand(newDestroyCmd(ctl, s))
+	rootCmd.AddCommand(newStatusCmd(s))
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -76,7 +77,6 @@ func initConfig() {
 }
 
 func initStore() db.Store {
-	fmt.Println("RUN STORE INIT")
 	var err error
 	jsonStore, err := db.NewJSONStore(".envctl/")
 	if err != nil {

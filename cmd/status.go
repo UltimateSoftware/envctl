@@ -1,56 +1,61 @@
 package cmd
 
-// var statusDesc = "get current environment's status"
+import (
+	"fmt"
+	"os"
 
-// var statusLongDesc = `status - Get the current environment's status
+	"github.com/UltimateSoftware/envctl/internal/db"
+	"github.com/spf13/cobra"
+)
 
-// Environments can be in different states:
-// - "ready": the environment is ready for use
-// - "error": the environment is in a bad state
-// - "off": the environment hasn't been created yet
+func newStatusCmd(s db.Store) *cobra.Command {
+	statusDesc := "get current environment's status"
 
-// To move from "off" to "ready" state, run "envctl create".
+	statusLongDesc := `status - Get the current environment's status
 
-// To fix "error" state, you can try recreating the environment with
-// "envctl destroy" followed by "envctl create".`
+Environments can be in different states:
+- "ready": the environment is ready for use
+- "error": the environment is in a bad state
+- "off": the environment hasn't been created yet
 
-// // statusCmd represents the status command
-// var statusCmd = &cobra.Command{
-// 	Use:   "status",
-// 	Short: statusDesc,
-// 	Long:  statusLongDesc,
-// 	Run:   runStatus,
-// }
+To move from "off" to "ready" state, run "envctl create".
 
-// func init() {
-// 	rootCmd.AddCommand(statusCmd)
-// }
+To fix "error" state, you can try recreating the environment with
+"envctl destroy" followed by "envctl create".`
 
-// func runStatus(cmd *cobra.Command, args []string) {
-// 	statusReady := `The environment is ready!
+	statusReady := `The environment is ready!
 
-// Run "envctl login" to enter it.`
+Run "envctl login" to enter it.`
 
-// 	statusError := `Something is wrong with the environment. :(
+	statusError := `Something is wrong with the environment. :(
 
-// Try recreating it by running "envctl destroy", followed by "envctl create".`
+Try recreating it by running "envctl destroy", followed by "envctl create".`
 
-// 	statusOff := `The environment is off.
+	statusOff := `The environment is off.
 
-// Run "envctl create" to spin it up!`
+Run "envctl create" to spin it up!`
 
-// 	env, err := jsonStore.Read()
-// 	if err != nil {
-// 		fmt.Printf("error reading data store: %v\n", err)
-// 		os.Exit(1)
-// 	}
+	runStatus := func(cmd *cobra.Command, args []string) {
+		env, err := s.Read()
+		if err != nil {
+			fmt.Printf("error reading data store: %v\n", err)
+			os.Exit(1)
+		}
 
-// 	switch env.Status {
-// 	case db.StatusReady:
-// 		fmt.Println(statusReady)
-// 	case db.StatusError:
-// 		fmt.Println(statusError)
-// 	case db.StatusOff:
-// 		fmt.Println(statusOff)
-// 	}
-// }
+		switch env.Status {
+		case db.StatusReady:
+			fmt.Println(statusReady)
+		case db.StatusError:
+			fmt.Println(statusError)
+		case db.StatusOff:
+			fmt.Println(statusOff)
+		}
+	}
+
+	return &cobra.Command{
+		Use:   "status",
+		Short: statusDesc,
+		Long:  statusLongDesc,
+		Run:   runStatus,
+	}
+}
