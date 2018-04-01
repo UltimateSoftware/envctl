@@ -6,20 +6,19 @@ import "fmt"
 // everything that a consumer of this package needs to know about containers
 // being managed.
 type Metadata struct {
-	ID        string
-	ImageID   string
-	BaseName  string
-	BaseImage string
-	Shell     string
-	Mount     Mount
-	WorkDir   string
-	Envs      []string
+	ID        string   `json:"id"`
+	ImageID   string   `json:"image_id"`
+	BaseName  string   `json:"base_name"`
+	BaseImage string   `json:"base_image"`
+	Shell     string   `json:"shell"`
+	Mount     Mount    `json:"mount"`
+	Envs      []string `json:"envs"`
 }
 
 // Mount is directory on the host paired with a volume mount point.
 type Mount struct {
-	Source      string
-	Destination string
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
 }
 
 // Controller can control containers. This includes allowing consumers to

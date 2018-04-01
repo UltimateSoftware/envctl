@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+
+	"github.com/UltimateSoftware/envctl/pkg/container"
 )
 
 var (
@@ -27,9 +29,8 @@ type Store interface {
 // is really what runs it. To store it, all that needs to be tracked is the
 // container and the image.
 type Environment struct {
-	Status    int    `json:"status"`
-	Image     string `json:"image"`
-	Container string `json:"container"`
+	Status    int                `json:"status"`
+	Container container.Metadata `json:"container"`
 }
 
 // JSONStore implements a Store as a JSON file.

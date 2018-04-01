@@ -5,16 +5,13 @@ import (
 	"os"
 
 	"github.com/UltimateSoftware/envctl/internal/db"
-	"github.com/UltimateSoftware/envctl/pkg/docker"
+	"github.com/UltimateSoftware/envctl/pkg/container"
+	"github.com/UltimateSoftware/envctl/pkg/container/docker"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
-
-var jsonStore *db.JSONStore
-
-var dockerClient *docker.Client
 
 var rootDesc = "Control your development environments"
 
@@ -52,8 +49,12 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	cobra.OnInitialize(initStore)
-	cobra.OnInitialize(initDocker)
+
+	ctl := initCtl()
+	s := initStore()
+
+	rootCmd.AddCommand(newCreateCmd(ctl, s))
+	rootCmd.AddCommand(newDestroyCmd(ctl, s))
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -74,20 +75,25 @@ func initConfig() {
 	viper.ReadInConfig()
 }
 
-func initStore() {
+func initStore() db.Store {
+	fmt.Println("RUN STORE INIT")
 	var err error
-	jsonStore, err = db.NewJSONStore(".envctl/")
+	jsonStore, err := db.NewJSONStore(".envctl/")
 	if err != nil {
 		fmt.Printf("error creating environment store: %v\n", err)
 		os.Exit(1)
 	}
+
+	return jsonStore
 }
 
-func initDocker() {
+func initCtl() container.Controller {
 	var err error
-	dockerClient, err = docker.NewClient()
+	ctl, err := docker.NewController()
 	if err != nil {
-		fmt.Printf("error creating docker client: %v\n", err)
+		fmt.Printf("error creating Docker controller: %v\n", err)
 		os.Exit(1)
 	}
+
+	return ctl
 }

@@ -1,71 +1,62 @@
 package cmd
 
-import (
-	"fmt"
-	"os"
+// var initDesc = "Initialize development environment"
 
-	"github.com/UltimateSoftware/envctl/internal/print"
+// var initLongDesc = `init - Initialize development environment
 
-	"github.com/spf13/cobra"
-)
+// "init" will generate a file called "envctl.yml" (or whatever was passed into
+// --config) in the current directory.
 
-var initDesc = "Initialize development environment"
+// This file has sane defaults, but might need to be edited, and should be checked
+// into version control.
+// `
 
-var initLongDesc = `init - Initialize development environment
+// // initCmd represents the init command
+// var initCmd = &cobra.Command{
+// 	Use:   "init",
+// 	Short: initDesc,
+// 	Long:  initLongDesc,
+// 	Run:   runInit,
+// }
 
-"init" will generate a file called "envctl.yml" (or whatever was passed into
---config) in the current directory.
+// func init() {
+// 	rootCmd.AddCommand(initCmd)
+// }
 
-This file has sane defaults, but might need to be edited, and should be checked
-into version control.
-`
+// func runInit(cmd *cobra.Command, args []string) {
+// 	tpl := `---
+// image: ubuntu:latest
 
-// initCmd represents the init command
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: initDesc,
-	Long:  initLongDesc,
-	Run:   runInit,
-}
+// shell: /bin/bash
 
-func init() {
-	rootCmd.AddCommand(initCmd)
-}
+// bootstrap:
+// - echo 'Environment initialized' > /envctl
 
-func runInit(cmd *cobra.Command, args []string) {
-	tpl := `---
-image: ubuntu:latest
+// variables:
+// - FOO=bar
+// `
 
-shell: /bin/bash
+// 	fmt.Print("creating config file... ")
 
-bootstrap:
-- echo 'Environment initialized' > /envctl
+// 	if _, err := os.Stat(cfgFile); err == nil {
+// 		print.Error()
+// 		fmt.Printf("cannot overwrite %v\n", cfgFile)
+// 		os.Exit(1)
+// 	}
 
-variables:
-- FOO=bar
-`
+// 	f, err := os.OpenFile(cfgFile, os.O_WRONLY|os.O_CREATE, 0644)
+// 	if err != nil {
+// 		print.Error()
+// 		fmt.Printf("error opening %v: %v\n", cfgFile, err)
+// 		os.Exit(1)
+// 	}
 
-	fmt.Print("creating config file... ")
+// 	_, err = f.WriteString(tpl)
+// 	if err != nil {
+// 		print.Error()
+// 		fmt.Printf("error writing %v: %v\n", cfgFile, err)
+// 		os.Exit(1)
+// 	}
 
-	if _, err := os.Stat(cfgFile); err == nil {
-		print.Error()
-		fmt.Printf("cannot overwrite %v\n", cfgFile)
-		os.Exit(1)
-	}
-
-	f, err := os.OpenFile(cfgFile, os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		print.Error()
-		fmt.Printf("error opening %v: %v\n", cfgFile, err)
-		os.Exit(1)
-	}
-
-	_, err = f.WriteString(tpl)
-	if err != nil {
-		print.Error()
-		fmt.Printf("error writing %v: %v\n", cfgFile, err)
-		os.Exit(1)
-	}
-
-	print.OK()
-}
+// 	print.OK()
+// }
