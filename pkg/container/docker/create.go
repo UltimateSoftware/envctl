@@ -33,14 +33,12 @@ func (c *Controller) Create(m container.Metadata) (container.Metadata, error) {
 	}
 
 	hcfg := &docker.HostConfig{
-		Binds: make([]string, len(m.Mounts)),
+		Binds: make([]string, 1),
 	}
+
+	hcfg.Binds[0] = m.Mount.String()
 
 	ncfg := &network.NetworkingConfig{}
-
-	for i, mount := range m.Mounts {
-		hcfg.Binds[i] = mount.String()
-	}
 
 	cnt, err := c.client.ContainerCreate(
 		context.Background(),
@@ -58,8 +56,8 @@ func (c *Controller) Create(m container.Metadata) (container.Metadata, error) {
 }
 
 var dockerfileTpl = `FROM {{ .BaseImage }}
-	VOLUME ["{{ .Mount }}"]
-	WORKDIR "{{ .Mount }}"
+	VOLUME ["{{ .Mount.Destination }}"]
+	WORKDIR "{{ .Mount.Destination }}"
 	ENTRYPOINT ["{{ .Shell }}"]`
 
 // buildImage will build an image based on the passed in ImageConfig. It returns

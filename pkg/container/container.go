@@ -11,7 +11,7 @@ type Metadata struct {
 	BaseName  string
 	BaseImage string
 	Shell     string
-	Mounts    []Mount
+	Mount     Mount
 	WorkDir   string
 	Envs      []string
 }
@@ -31,6 +31,6 @@ type Controller interface {
 	Run(Metadata, []string) error
 }
 
-func (b Mount) String() string {
-	return fmt.Sprintf("%v:%v", b.Source, b.Destination)
+func (m Mount) String() string {
+	return fmt.Sprintf("%v:%v", m.Source, m.Destination)
 }

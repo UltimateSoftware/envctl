@@ -6,16 +6,21 @@ import (
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/UltimateSoftware/envctl/pkg/container"
 )
 
 func TestBuildDockerfile(t *testing.T) {
-	testcfg := ImageConfig{
+	testm := container.Metadata{
 		BaseImage: "scratch",
-		Mount:     "/test-path",
-		Shell:     "/testsh",
+		Mount: container.Mount{
+			Source:      "",
+			Destination: "/test-path",
+		},
+		Shell: "/testsh",
 	}
 
-	buf, err := buildDockerfile(testcfg)
+	buf, err := buildDockerfile(testm)
 	if err != nil {
 		prettyFail(t, "errors", "no errors", err)
 	}
@@ -32,13 +37,16 @@ func TestBuildDockerfile(t *testing.T) {
 }
 
 func TestGetBuildContext(t *testing.T) {
-	testcfg := ImageConfig{
+	testm := container.Metadata{
 		BaseImage: "scratch",
-		Mount:     "/test-path",
-		Shell:     "/testsh",
+		Mount: container.Mount{
+			Source:      "",
+			Destination: "/test-path",
+		},
+		Shell: "/testsh",
 	}
 
-	buf, err := buildDockerfile(testcfg)
+	buf, err := buildDockerfile(testm)
 	if err != nil {
 		prettyFail(t, "Dockerfile build", "no errors", err)
 	}
