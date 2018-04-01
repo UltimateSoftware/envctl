@@ -3,14 +3,14 @@ package docker
 import (
 	"archive/tar"
 	"io"
-	gotest "testing"
+	"testing"
 
-	"github.com/UltimateSoftware/envctl/internal/testing"
 	"github.com/UltimateSoftware/envctl/pkg/container"
+	"github.com/UltimateSoftware/envctl/test_pkg"
 )
 
-func TestBuildDockerfile(got *gotest.T) {
-	t := testing.NewT(got)
+func TestBuildDockerfile(got *testing.T) {
+	t := test_pkg.NewT(got)
 
 	testm := container.Metadata{
 		BaseImage: "scratch",
@@ -37,8 +37,8 @@ func TestBuildDockerfile(got *gotest.T) {
 	}
 }
 
-func TestGetBuildContext(got *gotest.T) {
-	t := testing.NewT(got)
+func TestGetBuildContext(got *testing.T) {
+	t := test_pkg.NewT(got)
 
 	testm := container.Metadata{
 		BaseImage: "scratch",
