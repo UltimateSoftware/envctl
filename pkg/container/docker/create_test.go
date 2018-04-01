@@ -2,15 +2,16 @@ package docker
 
 import (
 	"archive/tar"
-	"fmt"
 	"io"
-	"strings"
-	"testing"
+	gotest "testing"
 
+	"github.com/UltimateSoftware/envctl/internal/testing"
 	"github.com/UltimateSoftware/envctl/pkg/container"
 )
 
-func TestBuildDockerfile(t *testing.T) {
+func TestBuildDockerfile(got *gotest.T) {
+	t := testing.NewT(got)
+
 	testm := container.Metadata{
 		BaseImage: "scratch",
 		Mount: container.Mount{
@@ -22,7 +23,7 @@ func TestBuildDockerfile(t *testing.T) {
 
 	buf, err := buildDockerfile(testm)
 	if err != nil {
-		prettyFail(t, "errors", "no errors", err)
+		t.Fatal("errors", nil, err)
 	}
 
 	expected := `FROM scratch
@@ -32,11 +33,13 @@ func TestBuildDockerfile(t *testing.T) {
 
 	actual := buf.String()
 	if expected != actual {
-		prettyFail(t, "Dockerfile build", expected, actual)
+		t.Fatal("Dockerfile build", expected, actual)
 	}
 }
 
-func TestGetBuildContext(t *testing.T) {
+func TestGetBuildContext(got *gotest.T) {
+	t := testing.NewT(got)
+
 	testm := container.Metadata{
 		BaseImage: "scratch",
 		Mount: container.Mount{
@@ -48,12 +51,12 @@ func TestGetBuildContext(t *testing.T) {
 
 	buf, err := buildDockerfile(testm)
 	if err != nil {
-		prettyFail(t, "Dockerfile build", "no errors", err)
+		t.Fatal("Dockerfile build", "no errors", err)
 	}
 
 	bldctx, err := getBuildContext(buf)
 	if err != nil {
-		prettyFail(t, "getBuildContext()", "no errors", err)
+		t.Fatal("getBuildContext()", "no errors", err)
 	}
 
 	tarrd := tar.NewReader(bldctx)
@@ -63,29 +66,15 @@ func TestGetBuildContext(t *testing.T) {
 		// the for loop will exit before hitting this check again. If it's not,
 		// it will fail because whatever is next won't match this.
 		if h.FileInfo().Name() != "Dockerfile" {
-			prettyFail(t, "tar header", "Dockerfile", h.FileInfo().Name())
+			t.Fatal("tar header", "Dockerfile", h.FileInfo().Name())
 		}
 
 		expected := int64(buf.Len())
 		actual := h.FileInfo().Size()
 		if expected != actual {
-			prettyFail(t, "tar file size", expected, actual)
+			t.Fatal("tar file size", expected, actual)
 		}
 
 		h, err = tarrd.Next()
 	}
-}
-
-func prettyFail(t *testing.T, header string, expected, actual interface{}) {
-	divider := strings.Repeat("=", len(header))
-
-	output := fmt.Sprintf(
-		"\n\n%v\n%v\n\nexpected:\n\n\t%v\n\ngot:\n\n\t%v\n",
-		header,
-		divider,
-		expected,
-		actual,
-	)
-
-	t.Fatal(output)
 }
