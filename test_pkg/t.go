@@ -27,3 +27,7 @@ func (t *T) Fatal(context string, expected, actual interface{}) {
 
 	t.t.Fatal(output)
 }
+
+func (t *T) Logf(fmt string, args ...interface{}) {
+	t.t.Logf(fmt, args...)
+}
