@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/UltimateSoftware/envctl/internal/db"
@@ -31,15 +29,6 @@ func (s *memStore) Delete() error {
 func TestOffStatus(got *testing.T) {
 	t := test_pkg.NewT(got)
 
-	oldstdout := os.Stdout
-
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal("initializing test", nil, err)
-	}
-
-	os.Stdout = w
-
 	s := &memStore{
 		env: db.Environment{
 			Status: 0,
@@ -48,23 +37,9 @@ func TestOffStatus(got *testing.T) {
 
 	cmd := newStatusCmd(s)
 
-	cmd.Run(cmd, []string{})
-
-	os.Stdout = oldstdout
-
-	errch := make(chan error)
-	outch := make(chan []byte)
-	go func() {
-		hijackedStdout, err := ioutil.ReadAll(r)
-		if err != nil {
-			errch <- err
-		}
-
-		outch <- hijackedStdout
-		r.Close()
-	}()
-
-	w.Close()
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
 
 	expected := `The environment is off.
 
@@ -73,7 +48,7 @@ Run "envctl create" to spin it up!
 
 	select {
 	case err := <-errch:
-		t.Fatal("error reading output", nil, err)
+		t.Fatal("hijacking output", nil, err)
 	case actual := <-outch:
 		if expected != string(actual) {
 			t.Fatal("output", expected, string(actual))
