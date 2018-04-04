@@ -7,25 +7,6 @@ import (
 	"github.com/UltimateSoftware/envctl/test_pkg"
 )
 
-type memStore struct {
-	env db.Environment
-}
-
-func (s *memStore) Create(e db.Environment) error {
-	s.env = e
-
-	return nil
-}
-
-func (s *memStore) Read() (db.Environment, error) {
-	return s.env, nil
-}
-
-func (s *memStore) Delete() error {
-	s.env = db.Environment{}
-	return nil
-}
-
 func TestOffStatus(got *testing.T) {
 	t := test_pkg.NewT(got)
 
