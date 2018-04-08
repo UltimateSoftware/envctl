@@ -15,7 +15,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newCreateCmd(ctl container.Controller, s db.Store) *cobra.Command {
+func newCreateCmd(
+	ctl container.Controller,
+	s db.Store,
+	cfg *viper.Viper,
+) *cobra.Command {
 	createDesc := "create a new instance of a development environment"
 	createLongDesc := `create - Create an instance of a development environment
 
@@ -40,10 +44,10 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 		}
 
 		name := uuid.New().String()
-		baseImage := viper.GetString("image")
-		shell := viper.GetString("shell")
-		mount := viper.GetString("mount")
-		rawenvs := viper.GetStringSlice("variables")
+		baseImage := cfg.GetString("image")
+		shell := cfg.GetString("shell")
+		mount := cfg.GetString("mount")
+		rawenvs := cfg.GetStringSlice("variables")
 
 		if mount == "" {
 			fmt.Println("no mount specified, defaulting to /mnt/repo... [ WARN ]")
@@ -94,7 +98,7 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 
 		print.OK()
 
-		rawcmds := viper.GetStringSlice("bootstrap")
+		rawcmds := cfg.GetStringSlice("bootstrap")
 		if len(rawcmds) > 0 {
 			fmt.Print("running bootstrap steps... ")
 

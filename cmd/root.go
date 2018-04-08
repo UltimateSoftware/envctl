@@ -12,6 +12,7 @@ import (
 )
 
 var cfgFile string
+var cfg *viper.Viper
 
 var rootDesc = "Control your development environments"
 
@@ -53,7 +54,7 @@ func init() {
 	ctl := initCtl()
 	s := initStore()
 
-	rootCmd.AddCommand(newCreateCmd(ctl, s))
+	rootCmd.AddCommand(newCreateCmd(ctl, s, cfg))
 	rootCmd.AddCommand(newDestroyCmd(ctl, s))
 	rootCmd.AddCommand(newStatusCmd(s))
 	rootCmd.AddCommand(newInitCmd())
@@ -67,15 +68,17 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	cfg = viper.New()
+
 	if cfgFile == "" {
 		cfgFile = "envctl.yaml"
 	}
 
-	viper.SetConfigFile(cfgFile)
+	cfg.SetConfigFile(cfgFile)
 
 	// If a config file is found, read it in. Swallow the error because
 	// if anything, the config file will be created with `init`.
-	viper.ReadInConfig()
+	cfg.ReadInConfig()
 }
 
 func initStore() db.Store {
