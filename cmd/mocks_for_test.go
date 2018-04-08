@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/UltimateSoftware/envctl/internal/db"
 	"github.com/UltimateSoftware/envctl/pkg/container"
+	"github.com/google/uuid"
 )
 
 type memStore struct {
@@ -35,11 +36,21 @@ type mockCtl struct {
 	runFn    func(container.Metadata, []string) error
 }
 
-func newMockCtl() *mockCtl {
-	ctl := &mockCtl{}
+func newMockCtl(init *container.Metadata) *mockCtl {
+	ctl := &mockCtl{
+		current: init,
+	}
 
 	ctl.createFn = func(m container.Metadata) (container.Metadata, error) {
 		ctl.current = &m
+
+		if ctl.current.ID == "" {
+			ctl.current.ID = uuid.New().String()
+		}
+
+		if ctl.current.ImageID == "" {
+			ctl.current.ImageID = uuid.New().String()
+		}
 
 		return *ctl.current, nil
 	}

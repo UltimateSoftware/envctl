@@ -25,46 +25,102 @@ func TestCreate(got *testing.T) {
 	cfg.Set("shell", "/foo/sh")
 	cfg.Set("mount", "/foo/mnt")
 
-	ctl := newMockCtl()
+	ctl := newMockCtl(nil)
 
 	cmd := newCreateCmd(ctl, s, cfg)
 
 	cmd.Run(cmd, []string{})
 
-	expected := db.Environment{
-		Status: db.StatusReady,
-		Container: container.Metadata{
-			BaseImage: "test",
-			Shell:     "/foo/sh",
-			Mount: container.Mount{
-				Destination: "/foo/mnt",
-			},
+	expectedStatus := db.StatusReady
+	expectedContainer := container.Metadata{
+		BaseImage: "test",
+		Shell:     "/foo/sh",
+		Mount: container.Mount{
+			Destination: "/foo/mnt",
 		},
 	}
 
-	actual := s.env
-
-	if expected.Status != actual.Status {
-		t.Fatal("environment status", expected.Status, actual.Status)
+	// Testing that the user-specified configuration is saved correctly.
+	if expectedStatus != s.env.Status {
+		t.Fatal("environment status", expectedStatus, s.env.Status)
 	}
 
-	if expected.Container.BaseImage != actual.Container.BaseImage {
+	if expectedContainer.BaseImage != s.env.Container.BaseImage {
 		t.Fatal("environment image",
-			expected.Container.BaseImage, actual.Container.BaseImage)
+			expectedContainer.BaseImage, s.env.Container.BaseImage)
 	}
 
-	if expected.Container.Shell != actual.Container.Shell {
+	if expectedContainer.Shell != s.env.Container.Shell {
 		t.Fatal("environment shell",
-			expected.Container.Shell, actual.Container.Shell)
+			expectedContainer.Shell, s.env.Container.Shell)
 	}
 
-	if expected.Container.Mount.Destination !=
-		actual.Container.Mount.Destination {
+	if expectedContainer.Mount.Destination !=
+		s.env.Container.Mount.Destination {
 
 		t.Fatal(
 			"environment mount point",
-			expected.Container.Mount.Destination,
-			actual.Container.Mount.Destination,
+			expectedContainer.Mount.Destination,
+			s.env.Container.Mount.Destination,
+		)
+	}
+
+	// Now that correct saving of user-specified configuration has been
+	// established, the calls to the container engine can be tested to make
+	// sure that what's done there is totally in sync with what's been saved.
+	if s.env.Container.ID != ctl.current.ID {
+		t.Fatal("container id", s.env.Container.ID, ctl.current.ID)
+	}
+
+	if s.env.Container.ImageID != ctl.current.ImageID {
+		t.Fatal(
+			"container image id",
+			s.env.Container.ImageID,
+			ctl.current.ImageID,
+		)
+	}
+
+	if s.env.Container.BaseImage != ctl.current.BaseImage {
+		t.Fatal(
+			"container base image",
+			s.env.Container.BaseImage,
+			ctl.current.BaseImage,
+		)
+	}
+
+	if s.env.Container.BaseName != ctl.current.BaseName {
+		t.Fatal("container base name",
+			s.env.Container.BaseName,
+			ctl.current.BaseName,
+		)
+	}
+
+	if s.env.Container.Shell != ctl.current.Shell {
+		t.Fatal("container shell",
+			s.env.Container.Shell,
+			ctl.current.Shell,
+		)
+	}
+
+	if s.env.Container.Mount.Destination != ctl.current.Mount.Destination {
+		t.Fatal("container mount point",
+			s.env.Container.Mount.Destination,
+			ctl.current.Mount.Destination,
 		)
 	}
 }
+
+// TODO: implement this
+// func TestCreateDefaultMount(got *testing.T) {}
+
+// TODO: implement this
+// func TestCreateAlreadyInitialized(got *testing.T) {}
+
+// TODO: implement this
+// func TestCreateWithVariables(got *testing.T) {}
+
+// TODO: implement this
+// func TestCreateWithDynamicVariables(got *testing.T) {}
+
+// TODO: implement this
+// func TestCreateWithBootstrap(got *testing.T) {}
