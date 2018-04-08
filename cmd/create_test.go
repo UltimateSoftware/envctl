@@ -29,7 +29,17 @@ func TestCreate(got *testing.T) {
 
 	cmd := newCreateCmd(ctl, s, cfg)
 
-	cmd.Run(cmd, []string{})
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
 
 	expectedStatus := db.StatusReady
 	expectedContainer := container.Metadata{

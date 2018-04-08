@@ -32,7 +32,18 @@ func TestDestroy(got *testing.T) {
 	ctl := newMockCtl(&cnt)
 
 	cmd := newDestroyCmd(ctl, s)
-	cmd.Run(cmd, []string{})
+
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
 
 	if nil != ctl.current {
 		t.Fatal("backing container", nil, ctl.current)

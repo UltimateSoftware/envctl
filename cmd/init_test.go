@@ -16,7 +16,18 @@ func TestInit(got *testing.T) {
 	cfgFile = "envctl.yaml.test"
 
 	cmd := newInitCmd()
-	cmd.Run(cmd, []string{})
+
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
 
 	f, err := os.Open(cfgFile)
 	if err != nil {
