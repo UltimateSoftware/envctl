@@ -32,6 +32,8 @@ func TestVersion(got *testing.T) {
 func TestMissingVersion(got *testing.T) {
 	t := test_pkg.NewT(got)
 
+	envctlVersion = ""
+
 	cmd := newVersionCmd()
 
 	outch, errch := test_pkg.HijackStdout(func() {
