@@ -9,181 +9,163 @@ import (
 
 	"github.com/UltimateSoftware/envctl/internal/db"
 	"github.com/UltimateSoftware/envctl/internal/print"
-	"github.com/UltimateSoftware/envctl/pkg/docker"
+	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var createDesc = "create a new instance of a development environment"
-
-var createLongDesc = `create - Create an instance of a development environment
+func newCreateCmd(
+	ctl container.Controller,
+	s db.Store,
+	cfg *viper.Viper,
+) *cobra.Command {
+	createDesc := "create a new instance of a development environment"
+	createLongDesc := `create - Create an instance of a development environment
 
 "create" will dynamically build a development environment based on the settings
 in the config file. Only one environment can exist at any time per config file.
 `
 
-// createCmd represents the create command
-var createCmd = &cobra.Command{
-	Use:   "create",
-	Short: createDesc,
-	Long:  createLongDesc,
-	Run:   runCreate,
-}
-
-func init() {
-	rootCmd.AddCommand(createCmd)
-}
-
-func runCreate(cmd *cobra.Command, args []string) {
-	env, err := jsonStore.Read()
-	if err != nil {
-		fmt.Printf("error reading environment state: %v\n", err)
-		os.Exit(1)
-	}
-
 	msgEnvReady := `There is already an environment ready for use!
 
 To use it, run "envctl login", or destroy it with "envctl destroy".`
 
-	if env.Initialized() {
-		fmt.Println(msgEnvReady)
-		os.Exit(1)
-	}
+	runCreate := func(cmd *cobra.Command, args []string) {
+		env, err := s.Read()
+		if err != nil {
+			fmt.Printf("error reading environment state: %v\n", err)
+			os.Exit(1)
+		}
 
-	name := uuid.New().String()
-	baseImage := viper.GetString("image")
-	shell := viper.GetString("shell")
-	mount := viper.GetString("mount")
+		if env.Initialized() {
+			fmt.Println(msgEnvReady)
+			os.Exit(1)
+		}
 
-	if mount == "" {
-		fmt.Println("no mount specified, defaulting to /mnt/repo... [ WARN ]")
-		mount = "/mnt/repo"
-	}
+		name := uuid.New().String()
+		baseImage := cfg.GetString("image")
+		shell := cfg.GetString("shell")
+		mount := cfg.GetString("mount")
+		rawenvs := cfg.GetStringSlice("variables")
 
-	fmt.Print("creating your environment... ")
+		if mount == "" {
+			fmt.Println("no mount specified, defaulting to /mnt/repo... [ WARN ]")
+			mount = "/mnt/repo"
+		}
 
-	img, err := dockerClient.BuildImage(docker.ImageConfig{
-		BaseName:  name,
-		Shell:     shell,
-		BaseImage: baseImage,
-		Mount:     mount,
-	})
-	if err != nil {
-		print.Error()
-		fmt.Printf("error building environment: %v\n", err)
-		os.Exit(1)
-	}
+		// This supports dynamic evaluation of environment variables so secrets
+		// don't have to be checked into the repo, but config files don't have
+		// to be generated from templates either.
+		envs := make([]string, len(rawenvs))
+		for i, rawenv := range rawenvs {
+			s := strings.Split(rawenv, "=")
+			k, v := s[0], s[1]
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		print.Error()
-		fmt.Printf("error getting current working directory: %v\n", err)
-		os.Exit(1)
-	}
+			if v[0] == '$' {
+				v = os.Getenv(v[1:])
+			}
 
-	rawenvs := viper.GetStringSlice("variables")
+			envs[i] = fmt.Sprintf("%v=%v", k, v)
+		}
 
-	ccfg := docker.ContainerConfig{
-		Name:      name,
-		ImageName: img,
-		Mounts: []docker.Mount{
-			docker.Mount{
+		pwd, err := os.Getwd()
+		if err != nil {
+			print.Error()
+			fmt.Printf("error getting current working directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		meta := container.Metadata{
+			BaseName:  name,
+			BaseImage: baseImage,
+			Shell:     shell,
+			Mount: container.Mount{
 				Source:      pwd,
 				Destination: mount,
 			},
-		},
-		Env: make([]string, len(rawenvs)),
-	}
-
-	// This supports dynamic evaluation of environment variables so secrets
-	// don't have to be checked into the repo, but config files don't have
-	// to be generated from templates either.
-	for i, rawenv := range rawenvs {
-		s := strings.Split(rawenv, "=")
-		k, v := s[0], s[1]
-
-		if v[0] == '$' {
-			v = os.Getenv(v[1:])
+			Envs: envs,
 		}
 
-		ccfg.Env[i] = fmt.Sprintf("%v=%v", k, v)
-	}
+		fmt.Print("creating your environment... ")
 
-	cnt, err := dockerClient.CreateContainer(ccfg)
-	if err != nil {
-		print.Error()
-		fmt.Printf("error creating environment: %v\n", err)
-		os.Exit(1)
-	}
+		newMeta, err := ctl.Create(meta)
+		if err != nil {
+			print.Error()
+			fmt.Printf("error creating environment: %v\n", err)
+			os.Exit(1)
+		}
 
-	print.OK()
+		print.OK()
 
-	rawcmds := viper.GetStringSlice("bootstrap")
+		rawcmds := cfg.GetStringSlice("bootstrap")
+		if len(rawcmds) > 0 {
+			fmt.Print("running bootstrap steps... ")
 
-	if len(rawcmds) > 0 {
-		fmt.Print("running bootstrap steps... ")
+			script := &bytes.Buffer{}
+			for _, rawcmd := range rawcmds {
+				_, err := script.WriteString(fmt.Sprintf("%v\n", rawcmd))
+				if err != nil {
+					print.Error()
+					fmt.Printf("error generating bootstrap script: %v\n", err)
+					s.Create(db.Environment{
+						Status:    db.StatusError,
+						Container: newMeta,
+					})
+					os.Exit(1)
+				}
+			}
 
-		script := &bytes.Buffer{}
-		for _, rawcmd := range rawcmds {
-			_, err := script.WriteString(fmt.Sprintf("%v\n", rawcmd))
+			fname := ".envctl/" + uuid.New().String()
+			f, err := os.OpenFile(fname, os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
 				print.Error()
-				fmt.Printf("error generating bootstrap script: %v\n", err)
-				jsonStore.Create(db.Environment{
+				fmt.Printf("error opening tmp script for writing: %v\n", err)
+				os.Exit(1)
+			}
+
+			if _, err := io.Copy(f, script); err != nil {
+				print.Error()
+				fmt.Printf("error writing bootstrap script: %v\n", err)
+				s.Create(db.Environment{
 					Status:    db.StatusError,
-					Container: cnt,
-					Image:     img,
+					Container: newMeta,
 				})
 				os.Exit(1)
 			}
+
+			cmdarr := []string{shell, fname}
+
+			err = ctl.Run(newMeta, cmdarr)
+			if err != nil {
+				print.Error()
+				fmt.Printf("error running %v: %v\n", cmdarr, err)
+				s.Create(db.Environment{
+					Status:    db.StatusError,
+					Container: newMeta,
+				})
+				os.Exit(1)
+			}
+			print.OK()
 		}
 
-		fname := ".envctl/" + uuid.New().String()
-		f, err := os.OpenFile(fname, os.O_CREATE|os.O_RDWR, os.ModePerm)
+		fmt.Print("saving environment... ")
+		err = s.Create(db.Environment{
+			Status:    db.StatusReady,
+			Container: newMeta,
+		})
 		if err != nil {
 			print.Error()
-			fmt.Printf("error opening tmp script for writing: %v\n", err)
-			os.Exit(1)
-		}
-
-		if _, err := io.Copy(f, script); err != nil {
-			print.Error()
-			fmt.Printf("error writing bootstrap script: %v\n", err)
-			jsonStore.Create(db.Environment{
-				Status:    db.StatusError,
-				Container: cnt,
-				Image:     img,
-			})
-			os.Exit(1)
-		}
-
-		cmdarr := []string{shell, fname}
-
-		err = dockerClient.RunOnContainer(cmdarr, cnt)
-		if err != nil {
-			print.Error()
-			fmt.Printf("error running %v: %v\n", cmdarr, err)
-			jsonStore.Create(db.Environment{
-				Status:    db.StatusError,
-				Container: cnt,
-				Image:     img,
-			})
+			fmt.Printf("error saving environment: %v\n", err)
 			os.Exit(1)
 		}
 		print.OK()
 	}
 
-	fmt.Print("saving environment... ")
-	err = jsonStore.Create(db.Environment{
-		Status:    db.StatusReady,
-		Image:     img,
-		Container: cnt,
-	})
-	if err != nil {
-		print.Error()
-		fmt.Printf("error saving environment: %v\n", err)
-		os.Exit(1)
+	return &cobra.Command{
+		Use:   "create",
+		Short: createDesc,
+		Long:  createLongDesc,
+		Run:   runCreate,
 	}
-	print.OK()
 }

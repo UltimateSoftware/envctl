@@ -8,28 +8,65 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/alecthomas/template"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
+	docker "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/google/uuid"
 )
 
+func (c *Controller) Create(m container.Metadata) (container.Metadata, error) {
+	img, err := c.buildImage(m)
+	if err != nil {
+		return container.Metadata{}, err
+	}
+
+	m.ImageID = img
+
+	ccfg := &docker.Config{
+		User:      "root",
+		Tty:       true,
+		Image:     m.ImageID,
+		OpenStdin: true,
+		Env:       m.Envs,
+	}
+
+	hcfg := &docker.HostConfig{
+		Binds: make([]string, 1),
+	}
+
+	hcfg.Binds[0] = m.Mount.String()
+
+	ncfg := &network.NetworkingConfig{}
+
+	cnt, err := c.client.ContainerCreate(
+		context.Background(),
+		ccfg,
+		hcfg,
+		ncfg,
+		m.BaseName,
+	)
+	if err != nil {
+		return container.Metadata{}, err
+	}
+
+	m.ID = cnt.ID
+	return m, nil
+}
+
 var dockerfileTpl = `FROM {{ .BaseImage }}
+	VOLUME ["{{ .Mount.Destination }}"]
+	WORKDIR "{{ .Mount.Destination }}"
+	ENTRYPOINT ["{{ .Shell }}"]`
 
-VOLUME ["{{ .Mount }}"]
-
-WORKDIR "{{ .Mount }}"
-
-ENTRYPOINT ["{{ .Shell }}"]
-`
-
-// BuildImage will build an image based on the passed in ImageConfig. It returns
+// buildImage will build an image based on the passed in ImageConfig. It returns
 // the name of the built image, as <cfg.BaseName:UUID>, or an error.
 //
-// BuildImage blocks until the image build has finished and the API is done
+// buildImage blocks until the image build has finished and the API is done
 // streaming the output back.
-func (c *Client) BuildImage(cfg ImageConfig) (string, error) {
-	dockerfile, err := buildDockerfile(cfg)
+func (c *Controller) buildImage(m container.Metadata) (string, error) {
+	dockerfile, err := buildDockerfile(m)
 	if err != nil {
 		return "", err
 	}
@@ -39,12 +76,12 @@ func (c *Client) BuildImage(cfg ImageConfig) (string, error) {
 		return "", err
 	}
 
-	name := fmt.Sprintf("%v:%v", cfg.BaseName, uuid.New().String())
+	name := fmt.Sprintf("%v:%v", m.BaseName, uuid.New().String())
 	bldopts := types.ImageBuildOptions{
 		Tags: []string{name},
 	}
 
-	resp, err := c.ImageBuild(context.Background(), buildContext, bldopts)
+	resp, err := c.client.ImageBuild(context.Background(), buildContext, bldopts)
 	if err != nil {
 		return "", err
 	}
@@ -57,37 +94,7 @@ func (c *Client) BuildImage(cfg ImageConfig) (string, error) {
 	return name, nil
 }
 
-// RemoveImage will remove all images with the given `name`. It returns an error
-// if something went wrong. An error can be returned with the removal process
-// incomplete (if, for example, there was an error removing an image from the
-// middle of a list of images).
-func (c *Client) RemoveImage(name string) error {
-	args := filters.NewArgs()
-	args.Add("reference", name)
-
-	rmopts := types.ImageRemoveOptions{
-		PruneChildren: true,
-		Force:         true,
-	}
-
-	imgs, err := c.ImageList(context.Background(), types.ImageListOptions{
-		Filters: args,
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, img := range imgs {
-		_, err := c.ImageRemove(context.Background(), img.ID, rmopts)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func buildDockerfile(cfg ImageConfig) (*bytes.Buffer, error) {
+func buildDockerfile(m container.Metadata) (*bytes.Buffer, error) {
 	buf := &bytes.Buffer{}
 
 	tpl, err := template.New("Dockerfile").Parse(dockerfileTpl)
@@ -95,7 +102,7 @@ func buildDockerfile(cfg ImageConfig) (*bytes.Buffer, error) {
 		return &bytes.Buffer{}, err
 	}
 
-	err = tpl.Execute(buf, &cfg)
+	err = tpl.Execute(buf, &m)
 	if err != nil {
 		return &bytes.Buffer{}, err
 	}

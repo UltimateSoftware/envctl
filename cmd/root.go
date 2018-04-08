@@ -5,16 +5,13 @@ import (
 	"os"
 
 	"github.com/UltimateSoftware/envctl/internal/db"
-	"github.com/UltimateSoftware/envctl/pkg/docker"
+	"github.com/UltimateSoftware/envctl/pkg/container"
+	"github.com/UltimateSoftware/envctl/pkg/container/docker"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-
-var jsonStore *db.JSONStore
-
-var dockerClient *docker.Client
+var cfgFile = "envctl.yaml"
 
 var rootDesc = "Control your development environments"
 
@@ -25,7 +22,7 @@ or mimic production environments on developer workstations. There are _many_
 ways to skin this cat.
 
 envctl is a tool for easily controlling these environments. The only thing it
-needs is a configuration file, "envctl.yml", for it to know what to do.
+needs is a configuration file, "envctl.yaml", for it to know what to do.
 `
 
 // rootCmd represents the base command when called without any subcommands
@@ -51,43 +48,48 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-	cobra.OnInitialize(initStore)
-	cobra.OnInitialize(initDocker)
+	ctl := initCtl()
+	s := initStore()
+	cfg := initConfig()
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is envctl.yml)")
+	rootCmd.AddCommand(newCreateCmd(ctl, s, cfg))
+	rootCmd.AddCommand(newDestroyCmd(ctl, s))
+	rootCmd.AddCommand(newStatusCmd(s))
+	rootCmd.AddCommand(newInitCmd())
+	rootCmd.AddCommand(newLoginCmd(ctl, s))
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile == "" {
-		cfgFile = "envctl.yaml"
-	}
+func initConfig() *viper.Viper {
+	cfg := viper.New()
 
-	viper.SetConfigFile(cfgFile)
+	cfg.SetConfigFile(cfgFile)
 
 	// If a config file is found, read it in. Swallow the error because
 	// if anything, the config file will be created with `init`.
-	viper.ReadInConfig()
+	cfg.ReadInConfig()
+
+	return cfg
 }
 
-func initStore() {
+func initStore() db.Store {
 	var err error
-	jsonStore, err = db.NewJSONStore(".envctl/")
+	jsonStore, err := db.NewJSONStore(".envctl/")
 	if err != nil {
 		fmt.Printf("error creating environment store: %v\n", err)
 		os.Exit(1)
 	}
+
+	return jsonStore
 }
 
-func initDocker() {
+func initCtl() container.Controller {
 	var err error
-	dockerClient, err = docker.NewClient()
+	ctl, err := docker.NewController()
 	if err != nil {
-		fmt.Printf("error creating docker client: %v\n", err)
+		fmt.Printf("error creating Docker controller: %v\n", err)
 		os.Exit(1)
 	}
+
+	return ctl
 }
