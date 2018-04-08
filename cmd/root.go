@@ -11,8 +11,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var cfg *viper.Viper
+var cfgFile = "envctl.yaml"
 
 var rootDesc = "Control your development environments"
 
@@ -23,7 +22,7 @@ or mimic production environments on developer workstations. There are _many_
 ways to skin this cat.
 
 envctl is a tool for easily controlling these environments. The only thing it
-needs is a configuration file, "envctl.yml", for it to know what to do.
+needs is a configuration file, "envctl.yaml", for it to know what to do.
 `
 
 // rootCmd represents the base command when called without any subcommands
@@ -49,36 +48,28 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	ctl := initCtl()
 	s := initStore()
+	cfg := initConfig()
 
 	rootCmd.AddCommand(newCreateCmd(ctl, s, cfg))
 	rootCmd.AddCommand(newDestroyCmd(ctl, s))
 	rootCmd.AddCommand(newStatusCmd(s))
 	rootCmd.AddCommand(newInitCmd())
 	rootCmd.AddCommand(newLoginCmd(ctl, s))
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is envctl.yml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	cfg = viper.New()
-
-	if cfgFile == "" {
-		cfgFile = "envctl.yaml"
-	}
+func initConfig() *viper.Viper {
+	cfg := viper.New()
 
 	cfg.SetConfigFile(cfgFile)
 
 	// If a config file is found, read it in. Swallow the error because
 	// if anything, the config file will be created with `init`.
 	cfg.ReadInConfig()
+
+	return cfg
 }
 
 func initStore() db.Store {
