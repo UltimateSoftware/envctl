@@ -15,13 +15,19 @@ environment with all the stuff they need to work on it.
 
 You can find a sample repo with an environment already set up [here](https://github.com/juicemia/envctl-sample).
 
+## Installation Guide
+
+`envctl` can be installed through Homebrew.
+
+```
+$ brew install juicemia/envctl/envctl
+```
+
+Alternatively, if you have `go` installed, you can compile from source.
+
 ## Quick Start
 
-**NOTE:** This assumes you have [Docker](https://www.docker.com/) installed.
-
 ```bash
-$ go get github.com/UltimateSoftware/envctl
-$ go install github.com/UltimateSoftware/envctl
 $ cd $HOME/src/my-repo
 $ envctl init
 $ envctl create
@@ -56,3 +62,10 @@ variables:
 - FOO=bar
 - SECRET=$SECRET
 ```
+
+## Contributing Guide
+
+- If you're new to Go, or don't know quite where to start, feel free to ask for
+help. Check the issues for things labeled "good first issue".
+- Pull requests are always welcome, no matter how crazy they are.
+- Write tests, and make sure `go test ./...` passes.
