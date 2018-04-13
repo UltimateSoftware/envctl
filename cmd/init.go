@@ -13,8 +13,7 @@ func newInitCmd() *cobra.Command {
 
 	initLongDesc := `init - Initialize development environment
 
-"init" will generate a file called "envctl.yml" (or whatever was passed into
---config) in the current directory.
+"init" will generate a file called "envctl.yaml".
 
 This file has sane defaults, but might need to be edited, and should be checked
 into version control.
@@ -29,7 +28,7 @@ bootstrap:
 - echo 'Environment initialized' > /envctl
 
 variables:
-- FOO=bar
+  FOO: bar
 `
 
 	runInit := func(cmd *cobra.Command, args []string) {
