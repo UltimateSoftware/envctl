@@ -1,6 +1,7 @@
 # envctl
 
 [![Build Status](https://travis-ci.org/UltimateSoftware/envctl.svg?branch=master)](https://travis-ci.org/UltimateSoftware/envctl)
+[Current Release](https://github.com/UltimateSoftware/envctl/releases/tag/2.0.0)
 
 -----
 
@@ -17,11 +18,7 @@ You can find a sample repo with an environment already set up [here](https://git
 
 ## Installation Guide
 
-`envctl` can be installed through Homebrew.
-
-```
-$ brew install juicemia/envctl/envctl
-```
+To install `envctl`, just download the [current release](https://github.com/UltimateSoftware/envctl/releases/tag/2.0.0) and extract the binary to somewhere in your `$PATH`.
 
 Alternatively, if you have `go` installed, you can compile from source.
 
