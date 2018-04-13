@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/UltimateSoftware/envctl/internal/config"
 	"github.com/UltimateSoftware/envctl/internal/db"
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/UltimateSoftware/envctl/pkg/container/docker"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var cfgFile = "envctl.yaml"
@@ -50,9 +50,9 @@ func Execute() {
 func init() {
 	ctl := initCtl()
 	s := initStore()
-	cfg := initConfig()
+	l := initConfig()
 
-	rootCmd.AddCommand(newCreateCmd(ctl, s, cfg))
+	rootCmd.AddCommand(newCreateCmd(ctl, s, l))
 	rootCmd.AddCommand(newDestroyCmd(ctl, s))
 	rootCmd.AddCommand(newStatusCmd(s))
 	rootCmd.AddCommand(newInitCmd())
@@ -61,16 +61,8 @@ func init() {
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() *viper.Viper {
-	cfg := viper.New()
-
-	cfg.SetConfigFile(cfgFile)
-
-	// If a config file is found, read it in. Swallow the error because
-	// if anything, the config file will be created with `init`.
-	cfg.ReadInConfig()
-
-	return cfg
+func initConfig() config.Loader {
+	return config.YAML{Path: cfgFile}
 }
 
 func initStore() db.Store {

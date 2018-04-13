@@ -6,4 +6,9 @@ shell: /bin/bash
 mount: /go/src/github.com/UltimateSoftware/envctl
 
 variables:
-- FOO=bar
+  FOO: bar
+  USER: $USER
+
+bootstrap:
+- echo 'INIT' > /foo.txt
+- echo 'MOAR INIT' >> /foo.txt
