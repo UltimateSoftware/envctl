@@ -57,7 +57,8 @@ bootstrap:
 - ./extra-config.sh
 
 # An array of environment variables. Anything with a $ will be evaluated against
-# the current set of exported variables being used by the current session.
+# the current set of exported variables being used by the current session. If
+# any of them evaluate to nothing, envctl will fail to create the environment.
 variables:
   FOO: bar
   SECRET: $SECRET
