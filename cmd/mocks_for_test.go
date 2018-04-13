@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/UltimateSoftware/envctl/internal/config"
 	"github.com/UltimateSoftware/envctl/internal/db"
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/google/uuid"
@@ -86,4 +87,12 @@ func (ctl *mockCtl) Attach(m container.Metadata) error {
 
 func (ctl *mockCtl) Run(m container.Metadata, cmds []string) error {
 	return ctl.runFn(m, cmds)
+}
+
+type memConfig struct {
+	opts config.Opts
+}
+
+func (c memConfig) Load() (config.Opts, error) {
+	return c.opts, nil
 }

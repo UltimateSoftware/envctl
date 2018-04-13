@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
+	"github.com/UltimateSoftware/envctl/internal/config"
 	"github.com/UltimateSoftware/envctl/internal/db"
 	"github.com/UltimateSoftware/envctl/internal/print"
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func newCreateCmd(
 	ctl container.Controller,
 	s db.Store,
-	cfg *viper.Viper,
+	l config.Loader,
 ) *cobra.Command {
 	createDesc := "create a new instance of a development environment"
 	createLongDesc := `create - Create an instance of a development environment
@@ -43,30 +42,26 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 			os.Exit(1)
 		}
 
+		cfg, err := l.Load()
+		if err != nil {
+			fmt.Printf("error reading config file: %v\n", err)
+			os.Exit(1)
+		}
+
 		name := uuid.New().String()
-		baseImage := cfg.GetString("image")
-		shell := cfg.GetString("shell")
-		mount := cfg.GetString("mount")
-		rawenvs := cfg.GetStringSlice("variables")
+		baseImage := cfg.Image
+		shell := cfg.Shell
+		mount := cfg.Mount
 
 		if mount == "" {
 			fmt.Println("no mount specified, defaulting to /mnt/repo... [ WARN ]")
 			mount = "/mnt/repo"
 		}
 
-		// This supports dynamic evaluation of environment variables so secrets
-		// don't have to be checked into the repo, but config files don't have
-		// to be generated from templates either.
-		envs := make([]string, len(rawenvs))
-		for i, rawenv := range rawenvs {
-			s := strings.Split(rawenv, "=")
-			k, v := s[0], s[1]
-
-			if v[0] == '$' {
-				v = os.Getenv(v[1:])
-			}
-
-			envs[i] = fmt.Sprintf("%v=%v", k, v)
+		envs, err := parseVariables(cfg)
+		if err != nil {
+			fmt.Printf("error getting environment variables: %v\n", err)
+			os.Exit(1)
 		}
 
 		pwd, err := os.Getwd()
@@ -98,7 +93,7 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 
 		print.OK()
 
-		rawcmds := cfg.GetStringSlice("bootstrap")
+		rawcmds := cfg.Bootstrap
 		if len(rawcmds) > 0 {
 			fmt.Print("running bootstrap steps... ")
 
@@ -168,4 +163,22 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 		Long:  createLongDesc,
 		Run:   runCreate,
 	}
+}
+
+func parseVariables(cfg config.Opts) ([]string, error) {
+	rawenvs := cfg.Variables
+
+	// This supports dynamic evaluation of environment variables so secrets
+	// don't have to be checked into the repo, but config files don't have
+	// to be generated from templates either.
+	envs := []string{}
+	for k, v := range rawenvs {
+		if v[0] == '$' {
+			v = os.Getenv(v[1:])
+		}
+
+		envs = append(envs, fmt.Sprintf("%v=%v", k, v))
+	}
+
+	return envs, nil
 }

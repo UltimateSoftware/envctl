@@ -58,6 +58,7 @@
     "api/types/versions",
     "api/types/volume",
     "client",
+    "pkg/signal",
     "pkg/term",
     "pkg/term/windows",
     "pkg/tlsconfig"
@@ -244,6 +245,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "473a04172bc1daabaa0e994a5753475488a5241ecc3b3eac686e07c9d136edc5"
+  inputs-digest = "339836b2d2a29d58850a6e1f615324d68c58626d1296098dfcbaea403ff0c6a7"
   solver-name = "gps-cdcl"
   solver-version = 1
