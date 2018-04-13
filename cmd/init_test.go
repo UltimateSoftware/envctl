@@ -14,6 +14,14 @@ func TestInit(got *testing.T) {
 	// This needs to be set in order for the init command to work. Normally it's
 	// set by Cobra when the command is initialized.
 	cfgFile = "envctl.yaml.test"
+	defer func() {
+		// This is a failure because the tests need to reset the state of the repo
+		// back to how it was. Other tests rely on the repo being in a clean state.
+		err := os.Remove(cfgFile)
+		if err != nil {
+			t.Fatal("error removing generated file", nil, err)
+		}
+	}()
 
 	cmd := newInitCmd()
 
@@ -48,19 +56,12 @@ bootstrap:
 - echo 'Environment initialized' > /envctl
 
 variables:
-- FOO=bar
+  FOO: bar
 `
 
 	actual := string(raw)
 
 	if expected != actual {
 		t.Fatal("file contents", expected, actual)
-	}
-
-	// This is a failure because the tests need to reset the state of the repo
-	// back to how it was. Other tests rely on the repo being in a clean state.
-	err = os.Remove(cfgFile)
-	if err != nil {
-		t.Fatal("error removing generated file", nil, err)
 	}
 }
