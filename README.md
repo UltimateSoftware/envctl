@@ -59,8 +59,8 @@ bootstrap:
 # An array of environment variables. Anything with a $ will be evaluated against
 # the current set of exported variables being used by the current session.
 variables:
-- FOO=bar
-- SECRET=$SECRET
+  FOO: bar
+  SECRET: $SECRET
 ```
 
 ## Contributing Guide
