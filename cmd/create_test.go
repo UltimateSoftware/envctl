@@ -3,8 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/spf13/viper"
-
+	"github.com/UltimateSoftware/envctl/internal/config"
 	"github.com/UltimateSoftware/envctl/internal/db"
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/UltimateSoftware/envctl/test_pkg"
@@ -19,11 +18,13 @@ func TestCreate(got *testing.T) {
 		},
 	}
 
-	cfg := viper.New()
-
-	cfg.Set("image", "test")
-	cfg.Set("shell", "/foo/sh")
-	cfg.Set("mount", "/foo/mnt")
+	cfg := memConfig{
+		opts: config.Opts{
+			Image: "test",
+			Shell: "/foo/sh",
+			Mount: "/foo/mnt",
+		},
+	}
 
 	ctl := newMockCtl(nil)
 
