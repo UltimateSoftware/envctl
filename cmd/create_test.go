@@ -193,6 +193,7 @@ func TestCreateWithDynamicVariables(got *testing.T) {
 	ctl := newMockCtl(nil)
 
 	os.Setenv("ENVCTL_TESTING", "FOO")
+	defer os.Setenv("ENVCTL_TESTING", "")
 
 	cmd := newCreateCmd(ctl, s, cfg)
 
@@ -211,6 +212,28 @@ func TestCreateWithDynamicVariables(got *testing.T) {
 	expected := "ENVCTL_TESTING=FOO"
 	if s.env.Container.Envs[0] != expected {
 		t.Fatal("variables", expected, s.env.Container.Envs[0])
+	}
+}
+
+func TestParseMissingVariables(got *testing.T) {
+	t := test_pkg.NewT(got)
+
+	opts := config.Opts{
+		Image: "test",
+		Shell: "/foo/sh",
+		Mount: "/foo/mnt",
+		Variables: map[string]string{
+			"ENVCTL_TESTING": "$ENVCTL_TESTING",
+		},
+	}
+
+	envs, err := parseVariables(opts)
+	if err == nil {
+		t.Fatal("error parsing variables", "missing variable ENVCTL_TESTING", err)
+	}
+
+	if len(envs) != 0 {
+		t.Fatal("number of parsed missing variables", 0, len(envs))
 	}
 }
 

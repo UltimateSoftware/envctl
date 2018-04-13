@@ -177,6 +177,10 @@ func parseVariables(cfg config.Opts) ([]string, error) {
 			v = os.Getenv(v[1:])
 		}
 
+		if v == "" {
+			return []string{}, fmt.Errorf("missing variable %v", k)
+		}
+
 		envs = append(envs, fmt.Sprintf("%v=%v", k, v))
 	}
 
