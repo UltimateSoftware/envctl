@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"testing"
 
 	"github.com/UltimateSoftware/envctl/internal/config"
@@ -165,12 +166,53 @@ func TestCreateWithVariables(got *testing.T) {
 
 	expected := "foo=bar"
 	if s.env.Container.Envs[0] != expected {
-		t.Fatal("variables", expected, s.env.Container.Envs)
+		t.Fatal("variables", expected, s.env.Container.Envs[0])
 	}
 }
 
-// TODO: implement this
-// func TestCreateWithDynamicVariables(got *testing.T) {}
+func TestCreateWithDynamicVariables(got *testing.T) {
+	t := test_pkg.NewT(got)
+
+	s := &memStore{
+		env: db.Environment{
+			Status: db.StatusOff,
+		},
+	}
+
+	cfg := memConfig{
+		opts: config.Opts{
+			Image: "test",
+			Shell: "/foo/sh",
+			Mount: "/foo/mnt",
+			Variables: map[string]string{
+				"ENVCTL_TESTING": "$ENVCTL_TESTING",
+			},
+		},
+	}
+
+	ctl := newMockCtl(nil)
+
+	os.Setenv("ENVCTL_TESTING", "FOO")
+
+	cmd := newCreateCmd(ctl, s, cfg)
+
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
+
+	expected := "ENVCTL_TESTING=FOO"
+	if s.env.Container.Envs[0] != expected {
+		t.Fatal("variables", expected, s.env.Container.Envs[0])
+	}
+}
 
 // TODO: implement this
 // func TestCreateWithBootstrap(got *testing.T) {}
