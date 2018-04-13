@@ -1,7 +1,6 @@
 # envctl
 
 [![Build Status](https://travis-ci.org/UltimateSoftware/envctl.svg?branch=master)](https://travis-ci.org/UltimateSoftware/envctl)
-[Current Release](https://github.com/UltimateSoftware/envctl/releases/tag/2.0.0)
 
 -----
 
