@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/UltimateSoftware/envctl/internal/print"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,8 +18,7 @@ func newVersionCmd() *cobra.Command {
 		Long:  versionLongDesc,
 		Run: func(cmd *cobra.Command, args []string) {
 			if envctlVersion == "" {
-				fmt.Print("no version set for this build... ")
-				print.Warn()
+				fmt.Println("no version set for this build... ")
 				envctlVersion = "local"
 			}
 
