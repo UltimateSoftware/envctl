@@ -12,3 +12,4 @@ variables:
 bootstrap:
 - echo 'INIT' > /foo.txt
 - echo 'MOAR INIT' >> /foo.txt
+- sleep 5
