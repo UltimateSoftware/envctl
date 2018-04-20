@@ -236,6 +236,3 @@ func TestParseMissingVariables(got *testing.T) {
 		t.Fatal("number of parsed missing variables", 0, len(envs))
 	}
 }
-
-// TODO: implement this
-// func TestCreateWithBootstrap(got *testing.T) {}
