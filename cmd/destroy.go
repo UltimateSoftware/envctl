@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/UltimateSoftware/envctl/internal/db"
-	"github.com/UltimateSoftware/envctl/internal/print"
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/spf13/cobra"
 )
@@ -32,21 +31,17 @@ To create it, run "envctl create".`
 			os.Exit(1)
 		}
 
-		fmt.Print("destroying environment... ")
+		fmt.Println("destroying environment... ")
 
 		if err := ctl.Remove(env.Container); err != nil {
-			print.Error()
 			fmt.Printf("error destroying environment: %v\n", err)
 			os.Exit(1)
 		}
 
 		if err := s.Delete(); err != nil {
-			print.Error()
 			fmt.Printf("error deleting data store: %v\n", err)
 			os.Exit(1)
 		}
-
-		print.OK()
 	}
 
 	return &cobra.Command{
