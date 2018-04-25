@@ -7,6 +7,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+var t = true
+var f = false
+
+// CacheImage is a helper for specifying whether an image should be cached.
+var CacheImage = &t
+
+// NoCacheImage is a helper for specifying whether an image shouldn't be cached.
+var NoCacheImage = &f
+
 // YAML is a Loader for a YAML configuration file.
 type YAML struct {
 	Path string
@@ -33,6 +42,10 @@ func (c YAML) Load() (Opts, error) {
 
 	if cfg.Shell == "" {
 		return Opts{}, errors.New("missing shell")
+	}
+
+	if cfg.CacheImage == nil {
+		cfg.CacheImage = CacheImage
 	}
 
 	return cfg, nil

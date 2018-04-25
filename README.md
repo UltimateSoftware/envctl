@@ -40,6 +40,9 @@ The configuration takes the following format:
 # Required - the base container image for the environment
 image: ubuntu:latest
 
+# Specifies whether the base image should be cached. Defaults to true.
+cache_image: false
+
 # Required - the shell to use when logged in
 shell: /bin/bash
 

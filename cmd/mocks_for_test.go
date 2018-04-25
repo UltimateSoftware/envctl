@@ -94,5 +94,9 @@ type memConfig struct {
 }
 
 func (c memConfig) Load() (config.Opts, error) {
+	if c.opts.CacheImage == nil {
+		c.opts.CacheImage = config.CacheImage
+	}
+
 	return c.opts, nil
 }

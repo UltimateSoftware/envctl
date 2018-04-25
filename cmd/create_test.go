@@ -236,3 +236,42 @@ func TestParseMissingVariables(got *testing.T) {
 		t.Fatal("number of parsed missing variables", 0, len(envs))
 	}
 }
+
+func TestNoCache(got *testing.T) {
+	t := test_pkg.NewT(got)
+
+	cfg := memConfig{
+		opts: config.Opts{
+			Image:      "test",
+			Shell:      "/foo/sh",
+			Mount:      "/foo/mnt",
+			CacheImage: config.NoCacheImage,
+		},
+	}
+
+	ctl := newMockCtl(nil)
+
+	s := &memStore{
+		env: db.Environment{
+			Status: db.StatusOff,
+		},
+	}
+
+	cmd := newCreateCmd(ctl, s, cfg)
+
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
+
+	if s.env.Container.NoCache != true {
+		t.Fatal("setting nocache", true, s.env.Container.NoCache)
+	}
+}
