@@ -78,7 +78,8 @@ func (c *Controller) buildImage(m container.Metadata) (string, error) {
 
 	name := fmt.Sprintf("%v:%v", m.BaseName, uuid.New().String())
 	bldopts := types.ImageBuildOptions{
-		Tags: []string{name},
+		Tags:    []string{name},
+		NoCache: m.NoCache,
 	}
 
 	resp, err := c.client.ImageBuild(context.Background(), buildContext, bldopts)

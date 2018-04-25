@@ -77,10 +77,11 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 				Source:      pwd,
 				Destination: mount,
 			},
-			Envs: envs,
+			Envs:    envs,
+			NoCache: !(*cfg.CacheImage),
 		}
 
-		fmt.Println("creating your environment... ")
+		fmt.Println("creating your environment...")
 
 		newMeta, err := ctl.Create(meta)
 		if err != nil {
@@ -90,7 +91,7 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 
 		rawcmds := cfg.Bootstrap
 		if len(rawcmds) > 0 {
-			fmt.Println("running bootstrap steps... ")
+			fmt.Println("running bootstrap steps...")
 
 			script := &bytes.Buffer{}
 			for _, rawcmd := range rawcmds {
@@ -134,7 +135,7 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 			}
 		}
 
-		fmt.Println("saving environment... ")
+		fmt.Println("saving environment...")
 		err = s.Create(db.Environment{
 			Status:    db.StatusReady,
 			Container: newMeta,
