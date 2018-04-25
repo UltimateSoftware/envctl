@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"time"
 
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/docker/docker/api/types"
@@ -10,7 +11,21 @@ import (
 
 // Remove removes the container with the given metadata.
 func (c *Controller) Remove(m container.Metadata) error {
-	err := c.removeImage(m.ImageID)
+	cnt, err := c.client.ContainerInspect(context.Background(), m.ID)
+	if err != nil {
+		return err
+	}
+
+	if cnt.ContainerJSONBase.State.Running {
+		timeout := 10 * time.Second
+		err := c.client.ContainerStop(context.Background(), m.ID,
+			&timeout)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = c.removeImage(m.ImageID)
 	if err != nil {
 		return err
 	}
