@@ -14,6 +14,7 @@ type Metadata struct {
 	Mount     Mount    `json:"mount"`
 	Envs      []string `json:"envs"`
 	NoCache   bool     `json:"no_cache"`
+	User      string   `json:"user"`
 }
 
 // Mount is directory on the host paired with a volume mount point.

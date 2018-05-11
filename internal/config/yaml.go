@@ -48,5 +48,9 @@ func (c YAML) Load() (Opts, error) {
 		cfg.CacheImage = CacheImage
 	}
 
+	if cfg.User == "" {
+		cfg.User = "root"
+	}
+
 	return cfg, nil
 }

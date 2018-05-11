@@ -25,7 +25,7 @@ func (c *Controller) Create(m container.Metadata) (container.Metadata, error) {
 	m.ImageID = img
 
 	ccfg := &docker.Config{
-		User:      "root",
+		User:      m.User,
 		Tty:       true,
 		Image:     m.ImageID,
 		OpenStdin: true,

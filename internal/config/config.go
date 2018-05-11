@@ -7,6 +7,7 @@ type Opts struct {
 	// from the default `false` value.
 	CacheImage *bool `yaml:"cache_image,omitempty"`
 
+	User      string            `yaml:"user"`
 	Shell     string            `yaml:"shell"`
 	Mount     string            `yaml:"mount,omitempty"`
 	Variables map[string]string `yaml:"variables,omitempty"`
