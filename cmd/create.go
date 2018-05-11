@@ -79,6 +79,7 @@ To use it, run "envctl login", or destroy it with "envctl destroy".`
 			},
 			Envs:    envs,
 			NoCache: !(*cfg.CacheImage),
+			User:    cfg.User,
 		}
 
 		fmt.Println("creating your environment...")

@@ -275,3 +275,43 @@ func TestNoCache(got *testing.T) {
 		t.Fatal("setting nocache", true, s.env.Container.NoCache)
 	}
 }
+
+func TestAlternateUser(got *testing.T) {
+	t := test_pkg.NewT(got)
+
+	cfg := memConfig{
+		opts: config.Opts{
+			Image:      "test",
+			Shell:      "/foo/sh",
+			Mount:      "/foo/mnt",
+			CacheImage: config.NoCacheImage,
+			User:       "foouser",
+		},
+	}
+
+	ctl := newMockCtl(nil)
+
+	s := &memStore{
+		env: db.Environment{
+			Status: db.StatusOff,
+		},
+	}
+
+	cmd := newCreateCmd(ctl, s, cfg)
+
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
+
+	if s.env.Container.User != "foouser" {
+		t.Fatal("setting user", "foouser", s.env.Container.User)
+	}
+}
