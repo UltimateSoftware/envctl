@@ -1,7 +1,15 @@
 language: go
-
 go:
-- "1.10.x"
-
+- 1.10.x
 script:
-- go test -v ./...
+- make
+deploy:
+  provider: releases
+  api_key:
+    secure: tG2VRn2BZKpnwqsVYoAt8rD3D+moMdNFuqmwIl/NRCNlMGtWOecZHUZv523HLsZ+HFQ5E+cGRMV3kaTFzmh9HyLC7PShUU077aRa1RTYzum7fQonBtAM9zEnz4T8GmU+SZHxEREvKhw/+D0zUzyF8FbvJ/zdiFo48/yFuNVCZskdfxVfbCyZcPVElPpyMwGekWkQfr6s1AP93PB15NUuKZSfXSoghawIPRzhFZcgPF3H9ufJ51Ga8jcZpe7BXdyqJbAUNgnMKr4IUaJQJP5ZTXzfPxHLTzMR6doTV/EfQNxog9CtIfSwtEYFpnbxcB7W/kyDmnC/pFWNehYGAw18Yti6zaYRltqgemRGwxWQcVfsv8q3REU9k7ZgzXgui74jdhixMQEpqP871g51iBqFWvWKrR3apcBilEOqYn3fTl/o5YHDbzBtyEHcxeukyo/2hLX1v7WBahjQt/cWrP8ods3tQd7czLiuTHDHImhAM/3RcWT7l6QDKCWdAg45dqgUFsGj+BWzXWsBP6ooDvb42LGv6VpI+Qn4rWhbBOmxOAmLnr0NLV/dlWA6zpvNnbjkvsPhiYQQ8wP6JPf4uZTw0AzlXuN0rO2ft9XkiUM8425tyaGz4niGquQxTtYrse4JJI7cKY5vO75TnfcTO4wtAfpxj77b/It1qHZUkG0aU0s=
+  file: envctl*.tar.gz
+  file_glob: true
+  skip_cleanup: true
+  on:
+    repo: UltimateSoftware/envctl
+    tags: true
