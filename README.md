@@ -61,6 +61,11 @@ bootstrap:
 variables:
   FOO: bar
   SECRET: $SECRET
+
+# A map of layer 3 protocols to ports that can be exposed by Docker.
+ports:
+  tcp:
+  - 4567
 ```
 
 ## Contributing Guide
