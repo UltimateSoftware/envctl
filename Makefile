@@ -1,4 +1,6 @@
-GOCMD=go
+GOOS=darwin
+GOARCH=amd64
+GOCMD=GOOS=$(GOOS) GOARCH=$(GOARCH) go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test -v
 GOCLEAN=$(GOCMD) clean
