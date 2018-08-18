@@ -1,9 +1,11 @@
-GOCMD=go
+GOOS=darwin
+GOARCH=amd64
+GOCMD=GOOS=$(GOOS) GOARCH=$(GOARCH) go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test -v
 GOCLEAN=$(GOCMD) clean
 BINARY_NAME=envctl
-VERSION=2.1.0
+VERSION=DEVEL
 LDFLAGS=-X github.com/UltimateSoftware/envctl/cmd.envctlVersion=$(VERSION)
 TARBALL_NAME=$(BINARY_NAME)$(VERSION).darwin-amd64.tar.gz
 

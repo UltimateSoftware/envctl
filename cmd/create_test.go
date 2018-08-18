@@ -315,3 +315,67 @@ func TestAlternateUser(got *testing.T) {
 		t.Fatal("setting user", "foouser", s.env.Container.User)
 	}
 }
+
+func TestPortMappings(got *testing.T) {
+	t := test_pkg.NewT(got)
+
+	cfg := memConfig{
+		opts: config.Opts{
+			Image:      "test",
+			Shell:      "/foo/sh",
+			Mount:      "/foo/mnt",
+			CacheImage: config.NoCacheImage,
+			User:       "foouser",
+			Ports: config.L3Ports(map[string][]int{
+				"tcp": []int{
+					99999,
+				},
+				"udp": []int{
+					88888,
+				},
+			}),
+		},
+	}
+
+	ctl := newMockCtl(nil)
+
+	s := &memStore{
+		env: db.Environment{
+			Status: db.StatusOff,
+		},
+	}
+
+	cmd := newCreateCmd(ctl, s, cfg)
+
+	// Hijacking here swallows the command output so that it doesn't clutter
+	// the output of `go test -v ./...`.
+	outch, errch := test_pkg.HijackStdout(func() {
+		cmd.Run(cmd, []string{})
+	})
+
+	select {
+	case err := <-errch:
+		t.Fatal("hijacking output", nil, err)
+	case <-outch:
+	}
+
+	t.Logf("%v", s.env.Container.Ports)
+
+	tcp, ok := s.env.Container.Ports["tcp"]
+	if !ok {
+		t.Fatal("saving ports", true, ok)
+	}
+
+	if tcp[0] != 99999 {
+		t.Fatal("saving ports", 99999, ok)
+	}
+
+	udp, ok := s.env.Container.Ports["udp"]
+	if !ok {
+		t.Fatal("saving ports", true, ok)
+	}
+
+	if udp[0] != 88888 {
+		t.Fatal("saving ports", 88888, ok)
+	}
+}

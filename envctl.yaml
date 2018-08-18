@@ -1,15 +1,10 @@
 ---
-image: golang:1.10-stretch
+image: ruby:2.5.1-stretch
 
 shell: /bin/bash
 
-mount: /go/src/github.com/UltimateSoftware/envctl
-
 variables:
-  FOO: bar
   USER: $USER
 
 bootstrap:
-- echo 'INIT' > /foo.txt
-- echo 'MOAR INIT' >> /foo.txt
-- sleep 5
+- gem install travis
