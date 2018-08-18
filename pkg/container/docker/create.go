@@ -8,6 +8,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/docker/go-connections/nat"
+
 	"github.com/UltimateSoftware/envctl/pkg/container"
 	"github.com/alecthomas/template"
 	"github.com/docker/docker/api/types"
@@ -24,16 +26,21 @@ func (c *Controller) Create(m container.Metadata) (container.Metadata, error) {
 
 	m.ImageID = img
 
+	cpmap := getContainerPortMappings(m.Ports)
+	hpmap := getHostPortMappings(m.Ports)
+
 	ccfg := &docker.Config{
-		User:      m.User,
-		Tty:       true,
-		Image:     m.ImageID,
-		OpenStdin: true,
-		Env:       m.Envs,
+		User:         m.User,
+		Tty:          true,
+		Image:        m.ImageID,
+		OpenStdin:    true,
+		Env:          m.Envs,
+		ExposedPorts: cpmap,
 	}
 
 	hcfg := &docker.HostConfig{
-		Binds: make([]string, 1),
+		Binds:        make([]string, 1),
+		PortBindings: hpmap,
 	}
 
 	hcfg.Binds[0] = m.Mount.String()
@@ -135,4 +142,35 @@ func getBuildContext(raw *bytes.Buffer) (*bytes.Buffer, error) {
 	padded := bytes.NewBuffer(append(buf.Bytes(), padding...))
 
 	return padded, nil
+}
+
+func getContainerPortMappings(l3map map[string][]int) map[nat.Port]struct{} {
+	mappings := map[nat.Port]struct{}{}
+
+	for layer, plist := range l3map {
+		for _, p := range plist {
+			pstr := nat.Port(fmt.Sprintf("%v/%v", p, layer))
+			mappings[pstr] = struct{}{}
+		}
+	}
+
+	return mappings
+}
+
+func getHostPortMappings(l3map map[string][]int) nat.PortMap {
+	mappings := nat.PortMap{}
+
+	for layer, plist := range l3map {
+		for _, p := range plist {
+			pstr := nat.Port(fmt.Sprintf("%v/%v", p, layer))
+
+			bind := nat.PortBinding{
+				HostPort: string(pstr),
+			}
+
+			mappings[pstr] = []nat.PortBinding{bind}
+		}
+	}
+
+	return mappings
 }

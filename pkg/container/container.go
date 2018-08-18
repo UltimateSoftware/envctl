@@ -6,15 +6,16 @@ import "fmt"
 // everything that a consumer of this package needs to know about containers
 // being managed.
 type Metadata struct {
-	ID        string   `json:"id"`
-	ImageID   string   `json:"image_id"`
-	BaseName  string   `json:"base_name"`
-	BaseImage string   `json:"base_image"`
-	Shell     string   `json:"shell"`
-	Mount     Mount    `json:"mount"`
-	Envs      []string `json:"envs"`
-	NoCache   bool     `json:"no_cache"`
-	User      string   `json:"user"`
+	ID        string           `json:"id"`
+	ImageID   string           `json:"image_id"`
+	BaseName  string           `json:"base_name"`
+	BaseImage string           `json:"base_image"`
+	Shell     string           `json:"shell"`
+	Mount     Mount            `json:"mount"`
+	Envs      []string         `json:"envs"`
+	NoCache   bool             `json:"no_cache"`
+	User      string           `json:"user"`
+	Ports     map[string][]int `json:"ports"`
 }
 
 // Mount is directory on the host paired with a volume mount point.

@@ -13,3 +13,7 @@ bootstrap:
 - echo 'INIT' > /foo.txt
 - echo 'MOAR INIT' >> /foo.txt
 - sleep 5
+
+ports:
+  tcp:
+  - 4567
