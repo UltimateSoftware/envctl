@@ -2,9 +2,9 @@ os:
 - osx
 language: go
 go:
-- 1.10.x
+- 1.11.x
 script:
-- make VERSION=$TRAVIS_BRANCH
+- env GO111MODULE=on make VERSION=$TRAVIS_BRANCH
 deploy:
   provider: releases
   api_key:

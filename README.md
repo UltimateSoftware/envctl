@@ -17,7 +17,7 @@ You can find a sample repo with an environment already set up [here](https://git
 
 ## Installation Guide
 
-To install `envctl`, just download the [current release](https://github.com/UltimateSoftware/envctl/releases/tag/2.0.0) and extract the binary to somewhere in your `$PATH`.
+To install `envctl`, just download the [current release](https://github.com/UltimateSoftware/envctl/releases) and extract the binary to somewhere in your `$PATH`.
 
 Alternatively, if you have `go` installed, you can compile from source.
 
