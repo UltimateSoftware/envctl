@@ -2,7 +2,7 @@ os:
 - osx
 language: go
 go:
-- 1.10.x
+- 1.11.x
 script:
 - make VERSION=$TRAVIS_BRANCH
 deploy:
